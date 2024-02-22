@@ -23,6 +23,8 @@
 #import "ZXHybridBinarizer.h"
 #import "ZXReader.h"
 #import "ZXResult.h"
+#import "ZXGenericMultipleBarcodeReader.h"
+#import "ZXMultipleBarcodeReader.h"
 
 @interface ZXCapture ()
 
@@ -58,10 +60,13 @@
     _onScreen = NO;
     _orderInSkip = 0;
     _orderOutSkip = 0;
-    _captureFramesPerSec = 3.0f;
+    _captureFramesPerSec = 10.0f;
     
     if (NSClassFromString(@"ZXMultiFormatReader")) {
       _reader = [NSClassFromString(@"ZXMultiFormatReader") performSelector:@selector(reader)];
+    }
+    if (NSClassFromString(@"ZXMultipleBarcodeReader")) {
+      _multi = [NSClassFromString(@"ZXMultipleBarcodeReader") performSelector:@selector(multi)];
     }
     
     _rotation = 0.0f;
@@ -346,30 +351,30 @@
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
-  if (!self.running) return;
-  
-  @autoreleasepool {
-    if (!self.cameraIsReady) {
-      self.cameraIsReady = YES;
-      if ([self.delegate respondsToSelector:@selector(captureCameraIsReady:)]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          [self.delegate captureCameraIsReady:self];
-        });
-      }
-    }
-    
-    if (!self.captureToFilename && !self.luminanceLayer && !self.binaryLayer && !self.delegate) {
-      return;
-    }
-    
+    if (!self.running) return;
+        
+    @autoreleasepool {
+        if (!self.cameraIsReady) {
+            self.cameraIsReady = YES;
+            if ([self.delegate respondsToSelector:@selector(captureCameraIsReady:)]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.delegate captureCameraIsReady:self];
+                });
+            }
+        }
+        
+        if (!self.captureToFilename && !self.luminanceLayer && !self.binaryLayer && !self.delegate) {
+            return;
+        }
+
     // reduce CPU usage by around 30%, reference: https://github.com/TheLevelUp/ZXingObjC/issues/314
     // Default capture 3 frames per second or customize them. if you want lower CPU usage, can adjust captureFramesPerSec to 1.0f make a better performace.
     float kMinMargin = 1.0 / _captureFramesPerSec;
-    
-    // Gets the timestamp for each frame.
-    CMTime presentTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
-    
-    static double curFrameTimeStamp = 0;
+        
+        // Gets the timestamp for each frame.
+        CMTime presentTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+        
+        static double curFrameTimeStamp = 0;
     static double lastFrameTimeStamp = 0;
     
     curFrameTimeStamp = (double)presentTimeStamp.value / presentTimeStamp.timescale;
@@ -377,11 +382,11 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     if (curFrameTimeStamp - lastFrameTimeStamp > kMinMargin) {
       lastFrameTimeStamp = curFrameTimeStamp;
       
-      CVImageBufferRef videoFrame = CMSampleBufferGetImageBuffer(sampleBuffer);
-      CGImageRef videoFrameImage = [ZXCGImageLuminanceSource createImageFromBuffer:videoFrame];
-      [self decodeImage:videoFrameImage];
+        CVImageBufferRef videoFrame = CMSampleBufferGetImageBuffer(sampleBuffer);
+        CGImageRef videoFrameImage = [ZXCGImageLuminanceSource createImageFromBuffer:videoFrame];
+        [self decodeImage:videoFrameImage];
     }
-  }
+}
 }
 
 - (void)decodeImage: (CGImageRef)image {
@@ -403,7 +408,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     CGImageDestinationFinalize(dest);
     CFRelease(dest);
     self.captureToFilename = nil;
-  }
+}
   
   if (_heuristic) {
     [self decodeImageAdv:rotatedImage];
@@ -438,11 +443,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     
     NSError *error;
     ZXResult *result = [self.reader decode:bitmap hints:self.hints error:&error];
+
     if (result) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-        [self.delegate captureResult:self result:result];
+        NSMutableArray<NSString *> *codes = [NSMutableArray array];
+             dispatch_async(dispatch_get_main_queue(), ^{
+        [self.delegate captureResult:self result:result codes:codes bitmap:bitmap];
       });
-      return;
+        return;
     }
   }
   
@@ -464,9 +471,11 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
       NSError *error;
       ZXResult *result = [self.reader decode:bitmap hints:self.hints error:&error];
       if (result) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          [self.delegate captureResult:self result:result];
-        });
+        NSMutableArray<NSString *> *codes = [NSMutableArray array];
+              dispatch_async(dispatch_get_main_queue(), ^{
+        [self.delegate captureResult:self result:result codes:codes bitmap:bitmap];
+      });
+
       }
     }
   }
@@ -486,11 +495,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     ZXHybridBinarizer *binarizer = [[ZXHybridBinarizer alloc] initWithSource:source];
     ZXBinaryBitmap *bitmap = [[ZXBinaryBitmap alloc] initWithBinarizer:binarizer];
     NSError *error;
+
     ZXResult *result = [self.reader decode:bitmap hints: self.hints error:&error];
-    if (result && [self.delegate respondsToSelector: @selector(captureResult:result:)]) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-        [self.delegate captureResult:self result:result];
-      });
+    if (result && [self.delegate respondsToSelector: @selector(captureResult:result:codes:bitmap:)]) {
+      NSMutableArray<NSString *> *codes = [NSMutableArray array];
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self.delegate captureResult:self result:result codes:codes bitmap:bitmap];
+    });
     }
   });
 }

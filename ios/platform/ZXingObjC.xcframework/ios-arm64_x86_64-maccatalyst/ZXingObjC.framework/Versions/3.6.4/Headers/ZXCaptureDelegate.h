@@ -19,7 +19,8 @@
 
 @protocol ZXCaptureDelegate <NSObject>
 
-- (void)captureResult:(ZXCapture *)capture result:(ZXResult *)result;
+- (void)captureResult:(ZXCapture *)capture result:(ZXResult *)result codes:(NSArray<NSString *> *)codes bitmap:(ZXBinaryBitmap *)bitmap;
+
 
 @optional
 - (void)captureSize:(ZXCapture *)capture

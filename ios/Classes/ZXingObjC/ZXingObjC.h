@@ -43,5 +43,6 @@
 
 #import "ZXMultiFormatReader.h"
 #import "ZXMultiFormatWriter.h"
+#import "ZXMultipleBarcodeReader.h"
 
 #endif

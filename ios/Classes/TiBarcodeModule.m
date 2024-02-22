@@ -14,6 +14,7 @@
 #import "TiOverlayView.h"
 #import "TiUtils.h"
 #import "TiViewProxy.h"
+#import "ZXQRCodeMultiReader.h"
 
 @implementation TiBarcodeModule
 
@@ -188,10 +189,19 @@
   ZXMultiFormatReader *reader = [ZXMultiFormatReader reader];
 
   NSError *error;
+ 
+  NSError *barcodesErr;
+  ZXGenericMultipleBarcodeReader* multi = [[ZXGenericMultipleBarcodeReader alloc] initWithDelegate:reader];
+  NSArray<ZXResult *> *decodedBarcodes = [multi decodeMultiple:bitmap hints:hints error:&barcodesErr];
 
   ZXResult *result = [reader decode:bitmap hints:hints error:&error];
+  NSMutableArray<NSString *> *codes = [NSMutableArray array];
+  for (ZXResult *result in decodedBarcodes) {
+      [codes addObject:result.text];
+  }
+  
   if (!error && result) {
-    [self handleSuccessResult:result.text withFormat:result.barcodeFormat withBytes:result.rawBytes];
+    [self handleSuccessResult:result.text withFormat:result.barcodeFormat withBytes:result.rawBytes scannedCodes: codes];
   } else {
     [self fireEvent:@"error" withObject:@{ @"message" : @"Scan Failed", @"exception" : error.localizedDescription }];
     return NUMBOOL(NO);
@@ -473,11 +483,11 @@
   [event setObject:data forKey:@"data"];
 }
 
-- (void)parseSuccessResult:(NSString *)result withFormat:(ZXBarcodeFormat)format withBytes:(ZXByteArray *)bytes
+- (void)parseSuccessResult:(NSString *)result withFormat:(ZXBarcodeFormat)format withBytes:(ZXByteArray *)bytes scannedCodes:(NSArray<NSString *> *)codes;
 {
-  NSMutableDictionary *event = [NSMutableDictionary dictionary];
+   NSMutableDictionary *event = [NSMutableDictionary dictionary];
   [event setObject:result forKey:@"result"];
-  NSString *prefixCheck = [[result substringToIndex:MIN(20, [result length])] lowercaseString];
+NSString *prefixCheck = [[result substringToIndex:MIN(20, [result length])] lowercaseString];
   if ([prefixCheck hasPrefix:@"http://"] || [prefixCheck hasPrefix:@"https://"]) {
     [event setObject:[self URL] forKey:@"contentType"];
   } else if ([prefixCheck hasPrefix:@"sms:"]) {
@@ -515,25 +525,27 @@
     [self parseWifi:event withString:result];
   } else {
     // anything else is assumed to be text
-    [event setObject:[self TEXT] forKey:@"contentType"];
-  }
+
+  [event setObject:[self TEXT] forKey:@"contentType"];
+}
   [event setObject:[NSNumber numberWithInteger:format] forKey:@"format"];
 
   TiBuffer *buffer = [[TiBuffer alloc] _initWithPageContext:[self executionContext]];
-  if (bytes) {
+if (bytes) {
     [buffer setData:[NSMutableData dataWithBytes:bytes.array length:bytes.length]];
   } else {
-    [buffer setData:[NSMutableData dataWithCapacity:0]];
-  }
+  [buffer setData:[NSMutableData dataWithCapacity:0]];
+}
   [event setObject:buffer forKey:@"bytes"];
+  [event setObject:codes forKey:@"codes"];
 
   [self fireEvent:@"success" withObject:event];
 }
 
-- (void)handleSuccessResult:(NSString *)result withFormat:(ZXBarcodeFormat)format withBytes:(ZXByteArray *)bytes
+- (void)handleSuccessResult:(NSString *)result withFormat:(ZXBarcodeFormat)format withBytes:(ZXByteArray *)bytes scannedCodes:(NSArray<NSString *> *)codes;
 {
-  @try {
-    [self parseSuccessResult:result withFormat:format withBytes:bytes];
+          @try {
+              [self parseSuccessResult:result withFormat:format withBytes:bytes scannedCodes: codes];
   }
   @catch (NSException *e) {
     [self fireEvent:@"error" withObject:[NSMutableDictionary dictionaryWithObjectsAndKeys:[e reason], @"message", nil]];
@@ -582,18 +594,28 @@ MAKE_SYSTEM_PROP(CONTACT, 8);
 MAKE_SYSTEM_PROP(BOOKMARK, 9);
 MAKE_SYSTEM_PROP(WIFI, 10);
 
-- (void)captureResult:(ZXCapture *)capture result:(ZXResult *)result
-{
-  if (!result)
-    return;
 
-  NSLog(result.text);
+- (void)captureResult:(ZXCapture *)capture result:(ZXResult *)result codes:(NSArray<NSString *> *)codes bitmap:(ZXBinaryBitmap *)bitmap {
+    if (!result) {
+        return;
+    }
 
-  [self handleSuccessResult:result.text withFormat:result.barcodeFormat withBytes:result.rawBytes];
+        ZXMultiFormatReader *reader = [ZXMultiFormatReader reader];
+        NSError *barcodesErr;
+        ZXGenericMultipleBarcodeReader *multi = [[ZXGenericMultipleBarcodeReader alloc] initWithDelegate:reader];
+        NSArray<ZXResult *> *decodedBarcodes = [multi decodeMultiple:bitmap error:&barcodesErr];
+        NSMutableArray<NSString *> *codess = [NSMutableArray array];
+        for (ZXResult *result in decodedBarcodes) {
+            [codess addObject:result.text];
+        }
 
-  if (!keepOpen) {
-    [self closeScanner];
-  }
+        NSLog(result.text);
+        [self handleSuccessResult:result.text withFormat:result.barcodeFormat withBytes:result.rawBytes scannedCodes:codess];
+
+        if (!keepOpen) {
+            [self closeScanner];
+        }
+
 }
 
 @end
