@@ -15,10 +15,6 @@
  */
 
 #import <AVFoundation/AVFoundation.h>
-#import "ZXGenericMultipleBarcodeReader.h"
-#import "ZXMultipleBarcodeReader.h"
-
-
 
 @protocol ZXCaptureDelegate, ZXReader;
 @class ZXDecodeHints;
@@ -48,12 +44,6 @@
 @property (nonatomic, assign) BOOL torch;
 @property (nonatomic, assign) CGAffineTransform transform;
 @property (nonatomic, assign) CGFloat captureFramesPerSec;
-@property (nonatomic, strong) id<ZXMultipleBarcodeReader> multi;
-
-
-
-
-
 
 - (int)back;
 - (int)front;
@@ -80,7 +70,5 @@
  * Currently: make the grayscale image darker to process
  */
 - (void)enableHeuristic;
-
-
 
 @end

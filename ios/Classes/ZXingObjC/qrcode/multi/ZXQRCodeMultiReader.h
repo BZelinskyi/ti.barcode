@@ -23,10 +23,3 @@
 @interface ZXQRCodeMultiReader : ZXQRCodeReader <ZXMultipleBarcodeReader>
 
 @end
-
-@protocol ZXQRCodeMultiReader <NSObject>
-
-- (NSArray *)decodeMultiple:(ZXBinaryBitmap *)image error:(NSError **)error;
-- (NSArray *)decodeMultiple:(ZXBinaryBitmap *)image hints:(ZXDecodeHints *)hints error:(NSError **)error;
-
-@end
