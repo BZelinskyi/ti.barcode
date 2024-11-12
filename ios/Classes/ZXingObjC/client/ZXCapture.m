@@ -26,6 +26,9 @@
 #import "ZXGenericMultipleBarcodeReader.h"
 #import "ZXMultipleBarcodeReader.h"
 
+@import Vision;
+
+
 @interface ZXCapture ()
 
 @property (nonatomic, strong) CALayer *binaryLayer;
@@ -111,20 +114,6 @@
   return layer;
 }
 
-- (AVCaptureVideoDataOutput *)output {
-  if (!_output) {
-    _output = [[AVCaptureVideoDataOutput alloc] init];
-    [_output setVideoSettings:@{
-                                (NSString *)kCVPixelBufferPixelFormatTypeKey : [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]
-                                }];
-    [_output setAlwaysDiscardsLateVideoFrames:YES];
-    [_output setSampleBufferDelegate:self queue:_captureQueue];
-    
-    [self.session addOutput:_output];
-  }
-  
-  return _output;
-}
 
 #pragma mark - Property Setters
 
@@ -367,27 +356,55 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
             return;
         }
 
-    // reduce CPU usage by around 30%, reference: https://github.com/TheLevelUp/ZXingObjC/issues/314
-    // Default capture 3 frames per second or customize them. if you want lower CPU usage, can adjust captureFramesPerSec to 1.0f make a better performace.
-    float kMinMargin = 1.0 / _captureFramesPerSec;
+        // reduce CPU usage by around 30%, reference: https://github.com/TheLevelUp/ZXingObjC/issues/314
+        // Default capture 3 frames per second or customize them. if you want lower CPU usage, can adjust captureFramesPerSec to 1.0f make a better performace.
+        float kMinMargin = 1.0 / _captureFramesPerSec;
         
         // Gets the timestamp for each frame.
         CMTime presentTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
         
         static double curFrameTimeStamp = 0;
-    static double lastFrameTimeStamp = 0;
+        static double lastFrameTimeStamp = 0;
     
-    curFrameTimeStamp = (double)presentTimeStamp.value / presentTimeStamp.timescale;
+        curFrameTimeStamp = (double)presentTimeStamp.value / presentTimeStamp.timescale;
     
-    if (curFrameTimeStamp - lastFrameTimeStamp > kMinMargin) {
-      lastFrameTimeStamp = curFrameTimeStamp;
+            lastFrameTimeStamp = curFrameTimeStamp;
       
-        CVImageBufferRef videoFrame = CMSampleBufferGetImageBuffer(sampleBuffer);
-        CGImageRef videoFrameImage = [ZXCGImageLuminanceSource createImageFromBuffer:videoFrame];
-        [self decodeImage:videoFrameImage];
+            CVImageBufferRef videoFrame = CMSampleBufferGetImageBuffer(sampleBuffer);
+            
+            VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCVPixelBuffer:videoFrame options:@{}];
+            VNDetectRectanglesRequest *request = [[VNDetectRectanglesRequest alloc] initWithCompletionHandler:^(VNRequest * _Nonnull request, NSError * _Nullable error) {
+                if (error) {
+                                  NSMutableArray<NSString *> *codes = [NSMutableArray array]; 
+                      [self.delegate captureDetectedCodes:codes];
+
+                    NSLog(@"Error: %@", error);
+                    return;
+                }
+                
+                NSArray<VNRectangleObservation *> *observations = request.results;
+                // Process the detected rectangles (if any)
+                for (VNRectangleObservation *observation in observations) {
+                    // Handle each detected rectangle
+                    // For example, you could draw a bounding box around the rectangle
+                    // or perform further processing
+                    CGRect normalizedRect = VNImageRectForNormalizedRect(observation.boundingBox, (int)CVPixelBufferGetWidth(videoFrame), (int)CVPixelBufferGetHeight(videoFrame));
+                    // Further actions with normalizedRect...
+                }
+            }];
+            
+            NSError *error = nil;
+            [handler performRequests:@[request] error:&error];
+            if (error) {
+                            NSMutableArray<NSString *> *codes = [NSMutableArray array]; 
+                      [self.delegate captureDetectedCodes:codes];
+
+                NSLog(@"Error: %@", error);
+            }
+        
     }
 }
-}
+
 
 - (void)decodeImage: (CGImageRef)image {
   // If scanRect is set, crop the current image to include only the desired rect

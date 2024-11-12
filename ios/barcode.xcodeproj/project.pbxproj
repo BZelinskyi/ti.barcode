@@ -670,6 +670,8 @@
 		2C0177792AA236650058EA8E /* ZXCGImageLuminanceSourceInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 2C0174FA2AA236630058EA8E /* ZXCGImageLuminanceSourceInfo.m */; };
 		2C01777A2AA236650058EA8E /* ZXCGImageLuminanceSource.h in Headers */ = {isa = PBXBuildFile; fileRef = 2C0174FB2AA236630058EA8E /* ZXCGImageLuminanceSource.h */; };
 		2C01777B2AA236650058EA8E /* ZXCapture.h in Headers */ = {isa = PBXBuildFile; fileRef = 2C0174FC2AA236630058EA8E /* ZXCapture.h */; };
+		841B4BBF2B9719E500F7BAE0 /* VisionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 841B4BBE2B9719E500F7BAE0 /* VisionKit.framework */; };
+		841B4BC12B9719EC00F7BAE0 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 841B4BC02B9719EC00F7BAE0 /* Vision.framework */; };
 		AA747D9F0F9514B9006C5449 /* TiBarcode_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* TiBarcode_Prefix.pch */; };
 		DAF8E7AF1300AF8B00C06BC6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DAF8E7AE1300AF8B00C06BC6 /* UIKit.framework */; };
 		DAF8E7B21300AF9400C06BC6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DAF8E7B11300AF9400C06BC6 /* AudioToolbox.framework */; };
@@ -1339,6 +1341,8 @@
 		2C0174FA2AA236630058EA8E /* ZXCGImageLuminanceSourceInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZXCGImageLuminanceSourceInfo.m; sourceTree = "<group>"; };
 		2C0174FB2AA236630058EA8E /* ZXCGImageLuminanceSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZXCGImageLuminanceSource.h; sourceTree = "<group>"; };
 		2C0174FC2AA236630058EA8E /* ZXCapture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZXCapture.h; sourceTree = "<group>"; };
+		841B4BBE2B9719E500F7BAE0 /* VisionKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VisionKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk/System/iOSSupport/System/Library/Frameworks/VisionKit.framework; sourceTree = DEVELOPER_DIR; };
+		841B4BC02B9719EC00F7BAE0 /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk/System/Library/Frameworks/Vision.framework; sourceTree = DEVELOPER_DIR; };
 		AA747D9E0F9514B9006C5449 /* TiBarcode_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TiBarcode_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		D2AAC07E0554694100DB518D /* libTiBarcode.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTiBarcode.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		DAF8E7AE1300AF8B00C06BC6 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -1353,6 +1357,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				841B4BC12B9719EC00F7BAE0 /* Vision.framework in Frameworks */,
+				841B4BBF2B9719E500F7BAE0 /* VisionKit.framework in Frameworks */,
 				246732D911E27BC500D39AF7 /* Foundation.framework in Frameworks */,
 				DAF8E7AF1300AF8B00C06BC6 /* UIKit.framework in Frameworks */,
 				DAF8E7B21300AF9400C06BC6 /* AudioToolbox.framework in Frameworks */,
@@ -1387,6 +1393,8 @@
 		0867D69AFE84028FC02AAC07 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				841B4BC02B9719EC00F7BAE0 /* Vision.framework */,
+				841B4BBE2B9719E500F7BAE0 /* VisionKit.framework */,
 				246732D811E27BC500D39AF7 /* Foundation.framework */,
 				DAF8E7AE1300AF8B00C06BC6 /* UIKit.framework */,
 				DAF8E7B11300AF9400C06BC6 /* AudioToolbox.framework */,
@@ -3093,7 +3101,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DSTROOT = /tmp/TiBarcode.dst;
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/platform",
@@ -3143,7 +3151,7 @@
 				"ARCHS[sdk=iphonesimulator*]" = "$(ARCHS_STANDARD)";
 				CLANG_ENABLE_MODULES = YES;
 				DSTROOT = /tmp/TiBarcode.dst;
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/platform",

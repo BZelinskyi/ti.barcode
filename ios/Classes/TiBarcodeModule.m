@@ -618,4 +618,22 @@ MAKE_SYSTEM_PROP(WIFI, 10);
 
 }
 
+- (void)captureDetectedCodes:(NSArray<NSString *> *)detectedCodes {
+
+
+  
+
+        NSLog(detectedCodes);
+
+           NSMutableDictionary *event = [NSMutableDictionary dictionary];
+
+
+             [self fireEvent:@"success" withObject:event];
+
+
+
+
+
+}
+
 @end
